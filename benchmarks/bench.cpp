@@ -70,13 +70,12 @@ static void BM_Malloc_Mixed(benchmark::State &state) {
 
 static void BM_Arena_Iterate(benchmark::State &state) {
   const std::size_t N = state.range(0);
-  ArenaAllocator arena((1u << 20) * 64);
-  auto **ptrs = arena.allocate<Medium *>(N);
-  for (std::size_t i = 0; i < N; i++)
-    ptrs[i] = arena.allocate<Medium>();
   for (auto _ : state) {
-    for (std::size_t i = 0; i < N; i++)
-      benchmark::DoNotOptimize(ptrs[i]->data[0]);
+    ArenaAllocator arena(64 * 1024 * 1024);
+    for (std::size_t i = 0; i < N; i++) {
+      auto *p = arena.allocate<Medium>();
+      benchmark::DoNotOptimize(p->data[0]);
+    }
   }
 }
 
