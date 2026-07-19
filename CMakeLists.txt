@@ -9,3 +9,9 @@ target_include_directories(arena PRIVATE include)
 
 add_executable(stress_test tests/stress_test.cpp)
 target_include_directories(stress_test PRIVATE include)
+
+find_package(benchmark)
+
+add_executable(bench benchmarks/bench.cpp)
+target_include_directories(bench PRIVATE include)
+target_link_libraries(bench benchmark::benchmark)
