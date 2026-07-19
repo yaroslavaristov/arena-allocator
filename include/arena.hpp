@@ -11,8 +11,9 @@
 
 class ArenaAllocator {
 public:
-  explicit ArenaAllocator(std::size_t capacity) : capacity_{capacity} {
-    if (capacity_ <= 0 || (capacity_ & (capacity_ - 1)) != 0) {
+  [[gnu::cold]] explicit ArenaAllocator(std::size_t capacity)
+      : capacity_{capacity} {
+    if (capacity_ <= 0 || (capacity_ & (capacity_ - 1)) != 0) [[unlikely]] {
       throw std::invalid_argument("Capacity must be greater than 0 and must be "
                                   "a power of two! Passed: " +
                                   std::to_string(capacity));
@@ -22,7 +23,8 @@ public:
                            MAP_PRIVATE | MAP_ANON | MAP_HUGETLB | MAP_POPULATE,
                            -1, 0)};
 
-    if (mmap_result == MAP_FAILED && (errno == EINVAL || errno == ENOMEM)) {
+    if (mmap_result == MAP_FAILED && (errno == EINVAL || errno == ENOMEM))
+        [[unlikely]] {
       std::print(stderr,
                  "Warning: HugePages are not available (errno: {}). Failing "
                  "back to standard 4KB pages.\n",
@@ -32,7 +34,7 @@ public:
                          MAP_PRIVATE | MAP_ANON | MAP_POPULATE, -1, 0);
     }
 
-    if (mmap_result == MAP_FAILED) {
+    if (mmap_result == MAP_FAILED) [[unlikely]] {
       int error_code{errno};
       std::print(stderr,
                  "Fatal: Troubles with allocating memory: {}\nERRNO: {}\n",
@@ -43,7 +45,7 @@ public:
     mem_start_ = reinterpret_cast<std::byte *>(mmap_result);
     curr_addr_ = mem_start_;
 
-    if (mlock2(mem_start_, capacity_, MCL_CURRENT) != 0) {
+    if (mlock2(mem_start_, capacity_, MCL_CURRENT) != 0) [[unlikely]] {
       int error_code{errno};
       std::print(stderr,
                  "Warning: Failed to lock memory with mlock2: {}\nERRNO: {}",
@@ -51,10 +53,10 @@ public:
     }
   }
 
-  ~ArenaAllocator() noexcept {
-    if (mem_start_) {
+  [[gnu::cold]] ~ArenaAllocator() noexcept {
+    if (mem_start_) [[likely]] {
       munlock(mem_start_, capacity_);
-      if (munmap(mem_start_, capacity_) != 0) {
+      if (munmap(mem_start_, capacity_) != 0) [[unlikely]] {
         int error_code{errno};
         std::print(stderr,
                    "Fatal: munmap failed during destruction: {}\nERRNO: {}\n",
@@ -83,7 +85,8 @@ public:
   }
 
   template <typename T, std::size_t Alignment = alignof(T)>
-  T *allocate(std::size_t alloc_obj) noexcept {
+  [[nodiscard, gnu::always_inline, gnu::hot]]
+  T *allocate(std::size_t alloc_obj = 1) noexcept {
     static_assert(((Alignment & (Alignment - 1)) == 0),
                   "Aligment must be a power of two!");
 
@@ -96,24 +99,29 @@ public:
     std::uintptr_t start_addr{reinterpret_cast<std::uintptr_t>(mem_start_)};
 
     if (next_addr < aligned_addr || next_addr > start_addr + capacity_)
+        [[unlikely]]
       return nullptr;
 
     curr_addr_ = reinterpret_cast<std::byte *>(next_addr);
     return reinterpret_cast<T *>(aligned_addr);
   }
 
-  void reset() noexcept { curr_addr_ = mem_start_; }
+  [[gnu::hot]] void reset() noexcept { curr_addr_ = mem_start_; }
 
-  std::size_t get_used_memory() const noexcept {
+  [[nodiscard, gnu::always_inline, gnu::pure]] std::size_t
+  get_used_memory() const noexcept {
     return static_cast<std::size_t>(curr_addr_ - mem_start_);
   }
 
-  std::size_t remaining() const noexcept {
+  [[nodiscard, gnu::always_inline, gnu::pure]] std::size_t
+  remaining() const noexcept {
     return capacity_ - get_used_memory();
   }
 
-  template <typename T> bool owns(const T *ptr) {
-    auto p{reinterpret_cast<std::byte *>(ptr)};
+  template <typename T>
+  [[nodiscard, gnu::always_inline, gnu::pure]] bool
+  owns(const T *ptr) const noexcept {
+    auto p{reinterpret_cast<const std::byte *>(ptr)};
     return p >= mem_start_ && p < mem_start_ + capacity_;
   }
 
