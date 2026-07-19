@@ -9,8 +9,23 @@
 #include <sys/mman.h>
 #include <utility>
 
+/**
+ * @brief Lock-free arena allocator for zero-allocation critical paths.
+ *
+ * Allocates a large memory region upfront via mmap (with HugePage support)
+ * and serves allocations by bumping a pointer. O(1) allocation, zero heap
+ * fragmentation, zero dynamic memory overhead.
+ *
+ * Not thread-safe. Designed for single-threaded HFT critical paths.
+ */
 class ArenaAllocator {
 public:
+  /**
+   * @brief Constructs the arena and allocates backing memory.
+   * @param capacity Size in bytes. Must be a power of two.
+   * @throws std::invalid_argument if capacity is 0 or not a power of two.
+   * @throws std::bad_alloc if mmap fails.
+   */
   [[gnu::cold]] explicit ArenaAllocator(std::size_t capacity)
       : capacity_{capacity} {
     if (capacity_ <= 0 || (capacity_ & (capacity_ - 1)) != 0) [[unlikely]] {
@@ -52,7 +67,9 @@ public:
                  std::strerror(error_code), error_code);
     }
   }
-
+  /**
+   * @brief Destroys the arena and releases all backing memory.
+   */
   [[gnu::cold]] ~ArenaAllocator() noexcept {
     if (mem_start_) [[likely]] {
       munlock(mem_start_, capacity_);
@@ -84,6 +101,13 @@ public:
     return *this;
   }
 
+  /**
+   * @brief Allocates aligned storage for `alloc_obj` objects of type T.
+   * @tparam T Type to allocate.
+   * @tparam Alignment Alignment requirement. Defaults to alignof(T).
+   * @param alloc_obj Number of objects to allocate. Defaults to 1.
+   * @return Pointer to allocated memory, or nullptr if arena is full.
+   */
   template <typename T, std::size_t Alignment = alignof(T)>
   [[nodiscard, gnu::always_inline, gnu::hot]]
   T *allocate(std::size_t alloc_obj = 1) noexcept {
@@ -106,15 +130,22 @@ public:
     return reinterpret_cast<T *>(aligned_addr);
   }
 
+  /**
+   * @brief Resets the arena. All previously allocated pointers are invalid.
+   */
   [[gnu::hot]] void reset() noexcept { curr_addr_ = mem_start_; }
 
+  /**
+   * @brief Returns the number of bytes currently allocated.
+   */
   [[nodiscard, gnu::always_inline, gnu::pure]] std::size_t
   get_used_memory() const noexcept {
     return static_cast<std::size_t>(curr_addr_ - mem_start_);
   }
 
-  [[nodiscard, gnu::always_inline, gnu::pure]] std::size_t
-  remaining() const noexcept {
+  ***@brief Returns true if the given pointer belongs to this arena.* /
+      [[nodiscard, gnu::always_inline, gnu::pure]] std::size_t
+      remaining() const noexcept {
     return capacity_ - get_used_memory();
   }
 
