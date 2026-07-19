@@ -143,9 +143,11 @@ public:
     return static_cast<std::size_t>(curr_addr_ - mem_start_);
   }
 
-  ***@brief Returns true if the given pointer belongs to this arena.* /
-      [[nodiscard, gnu::always_inline, gnu::pure]] std::size_t
-      remaining() const noexcept {
+  /**
+   * *@brief Returns true if the given pointer belongs to this arena.
+   */
+  [[nodiscard, gnu::always_inline, gnu::pure]] std::size_t
+  remaining() const noexcept {
     return capacity_ - get_used_memory();
   }
 
