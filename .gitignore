@@ -64,6 +64,9 @@ vcpkg_installed/
 # debug information files
 *.dwo
 
+# Doxygen docs
+docs/
+
 # test output & cache
 Testing/
 .cache/
