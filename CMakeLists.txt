@@ -17,4 +17,4 @@ add_executable(bench benchmarks/bench.cpp)
 target_include_directories(bench PRIVATE include)
 target_link_libraries(bench benchmark::benchmark)
 
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -funroll-loops -Wextra -Wall -DNDEBUG")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -funroll-loops -Wextra -Wall -Werror -DNDEBUG")
