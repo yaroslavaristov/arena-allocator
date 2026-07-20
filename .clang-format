@@ -1,0 +1,51 @@
+Language:        Cpp
+BasedOnStyle:    LLVM
+
+IndentWidth:     4
+TabWidth:        4
+UseTab:          Never
+ContinuationIndentWidth: 4
+
+ColumnLimit:     120
+BreakBeforeBraces: Attach
+
+AllowShortBlocksOnASingleLine: Never
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: Inline
+
+BinPackArguments: false
+BinPackParameters: false
+AlignAfterOpenBracket: Align
+
+SpaceBeforeParens: ControlStatements
+SpacesInAngles:   false
+SpacesInContainerLiterals: false
+SpaceAfterCStyleCast: true
+
+PointerAlignment: Left
+ReferenceAlignment: Left
+DerivePointerAlignment: false
+
+AlwaysBreakTemplateDeclarations: Yes
+
+SortIncludes: true
+IncludeBlocks: Regroup
+
+AlignTrailingComments: true
+CommentPragmas: '^ IWYU pragma:'
+
+LambdaBodyIndentation: Signature
+
+IndentCaseLabels: true
+
+IndentPPDirectives: AfterHash
+
+Cpp11BracedListStyle: true
+FixNamespaceComments: true
+
+AlignConsecutiveDeclarations: Consecutive
+AlignConsecutiveMacros: Consecutive
+AlignConsecutiveAssignments: Consecutive
+PenaltyReturnTypeOnItsOwnLine: 200
+SpaceBeforeRangeBasedForLoopColon: true
