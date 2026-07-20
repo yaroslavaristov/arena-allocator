@@ -57,10 +57,10 @@ class ArenaAllocator {
         mem_start_ = reinterpret_cast<std::byte*>(mmap_result);
         curr_addr_ = mem_start_;
 
-        if (mlock2(mem_start_, capacity_, MCL_CURRENT) != 0) [[unlikely]] {
+        if (mlock(mem_start_, capacity_) != 0) [[unlikely]] {
             int error_code{errno};
             std::print(stderr,
-                       "Warning: Failed to lock memory with mlock2: {}\nERRNO: {}",
+                       "Warning: Failed to lock memory with mlock: {}\nERRNO: {}",
                        std::strerror(error_code),
                        error_code);
         }
