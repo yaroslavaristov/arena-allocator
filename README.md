@@ -10,7 +10,7 @@ Allocates a large memory region upfront via `mmap` (with HugePage support) and s
 
 - **O(1) allocation** — single pointer increment, no heap involvement
 - **HugePage support** — `MAP_HUGETLB` with automatic fallback to 4KB pages
-- **Memory locking** — `mlock2` prevents pages from being swapped out
+- **Memory locking** — `mlock` prevents pages from being swapped out
 - **Custom alignment** — compile-time alignment via template parameter
 - **Overflow protection** — returns `nullptr` on exhaustion, no UB
 - **Move semantics** — movable, non-copyable (owns a unique mmap region)
@@ -127,7 +127,7 @@ bool owns(const T* ptr) const noexcept;
 **Why `mmap` instead of `new`?**
 `mmap` gives direct control over memory mapping flags. `MAP_HUGETLB` reduces TLB pressure on large arenas. `MAP_POPULATE` pre-faults pages at construction time so there are no page faults in the hot path.
 
-**Why `mlock2`?**
+**Why `mlock`?**
 Prevents the OS from swapping arena pages to disk. In latency-sensitive systems, a page fault at the wrong moment causes microsecond-level spikes.
 
 **Why power-of-two capacity?**
@@ -159,7 +159,7 @@ make
 ./stress_test
 ```
 
-**Requirements:** C++23, GCC 14+ or Clang 17+, Linux (for `mmap`/`mlock2`)
+**Requirements:** C++23, GCC 14+ or Clang 17+, Linux (for `mmap`/`mlock`)
 
 ---
 
